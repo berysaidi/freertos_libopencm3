@@ -1,5 +1,7 @@
-# We only need to build our one source file
-OBJS = main.o
+include freertos.mk
+SRCS = main.c
+SRCS+= $(FREERTOS_SRC)
+OBJS:= $(patsubst %.c,%.o,$(SRCS))
 
 # We've got opencm3 in the folder with us
 OPENCM3_DIR := ./lib/libopencm3
@@ -15,7 +17,7 @@ LIBNAME		= opencm3_stm32f4
 DEFS		+= -DSTM32F4
 
 # Target-specific flags
-FP_FLAGS	?= -mfloat-abi=hard -mfpu=fpv4-sp-d16
+FP_FLAGS	= -mfloat-abi=hard -mfpu=fpv4-sp-d16
 ARCH_FLAGS	= -mthumb -mcpu=cortex-m4 $(FP_FLAGS)
 
 # Where our Black Magic Probe is attached
@@ -70,6 +72,10 @@ endif
 
 # Used libraries
 DEFS		+= -I$(OPENCM3_DIR)/include
+DEFS 		+= $(FREERTOS_INC)
+DEFS 		+= -Iinc/	
+
+
 LDFLAGS		+= -L$(OPENCM3_DIR)/lib
 LDLIBS		+= -l$(LIBNAME)
 LDLIBS		+= -Wl,--start-group -lc -lgcc -lnosys -Wl,--end-group
