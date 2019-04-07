@@ -17,9 +17,34 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this library.  If not, see <http://www.gnu.org/licenses/>.
  */
-
+#include <stdint.h>
+#include "FreeRTOS.h"
+#include "task.h"
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/gpio.h>
+
+extern void vApplicationStackOverflowHook(
+	TaskHandle_t *pxTask,
+	signed portCHAR *pcTaskName);
+
+void
+vApplicationStackOverflowHook(
+  TaskHandle_t *pxTask __attribute((unused)),
+  signed portCHAR *pcTaskName __attribute((unused))
+) {
+	for(;;);	// Loop forever here..
+}
+
+static void
+task1(void *args __attribute((unused))) {
+
+	for (;;) {
+		gpio_toggle(GPIOD,GPIO12);
+		vTaskDelay(pdMS_TO_TICKS(500));
+	}
+}
+
+
 
 static void gpio_setup(void)
 {
@@ -37,36 +62,29 @@ static void gpio_setup(void)
 	gpio_mode_setup(GPIOD, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO12);
 
 }
+    /* Dimensions the buffer that the task being created will use as its stack.
+    NOTE:  This is the number of words the stack will hold, not the number of
+    bytes.  For example, if each stack item is 32-bits, and this is set to 100,
+    then 400 bytes (100 * 32-bits) will be allocated. */
+    #define STACK_SIZE 200
 
+    /* Structure that will hold the TCB of the task being created. */
+    StaticTask_t xTaskBuffer;
+
+    /* Buffer that the task being created will use as its stack.  Note this is
+    an array of StackType_t variables.  The size of StackType_t is dependent on
+    the RTOS port. */
+    StackType_t xStack[ STACK_SIZE ];
 int main(void)
 {
-	int i;
-
+	rcc_clock_setup_hse_3v3(&rcc_hse_8mhz_3v3[RCC_CLOCK_3V3_168MHZ]);
 	gpio_setup();
 
+	xTaskCreate(task1,"LED",STACK_SIZE, NULL, configMAX_PRIORITIES-1,NULL);
+	vTaskStartScheduler();
 	/* Blink the LED (PC8) on the board. */
 	while (1) {
-		/* Manually: */
-		// GPIOD_BSRR = GPIO12;		/* LED off */
-		// for (i = 0; i < 1000000; i++)	/* Wait a bit. */
-		//	__asm__("nop");
-		// GPIOD_BRR = GPIO12;		/* LED on */
-		// for (i = 0; i < 1000000; i++)	/* Wait a bit. */
-		//	__asm__("nop");
 
-		/* Using API functions gpio_set()/gpio_clear(): */
-		// gpio_set(GPIOD, GPIO12);	/* LED off */
-		// for (i = 0; i < 1000000; i++)	/* Wait a bit. */
-		//	__asm__("nop");
-		// gpio_clear(GPIOD, GPIO12);	/* LED on */
-		// for (i = 0; i < 1000000; i++)	/* Wait a bit. */
-		//	__asm__("nop");
-
-		/* Using API function gpio_toggle(): */
-		gpio_toggle(GPIOD, GPIO12);	/* LED on/off */
-		for (i = 0; i < 1000000; i++) {	/* Wait a bit. */
-			__asm__("nop");
-		}
 	}
 
 	return 0;
