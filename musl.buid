@@ -1,0 +1,3 @@
+./configure --enable-debug --enable-warnings --disable-shared --prefix=/home/bery/localbuilds/musl --exec-prefix=/home/bery/localbuilds/musl --target=arm-none-eabi --enable-wrapper=gcc
+
+
